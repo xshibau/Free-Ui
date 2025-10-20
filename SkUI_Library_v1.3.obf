@@ -1,150 +1,195 @@
 local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
 
-local library = {}
+local Library = {}
 local ui = Instance.new("ScreenGui")
-ui.Name = "CoreUiLib"
+ui.Name = "AuraHubUI"
 ui.ResetOnSpawn = false
 ui.Parent = CoreGui
 
-local function dragify(frame)
-	local dragging = false
-	local dragInput, start, pos
-	frame.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			start = input.Position
-			pos = frame.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then dragging = false end
-			end)
-		end
-	end)
-	frame.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging then
-			local delta = input.Position - start
-			frame.Position = UDim2.new(pos.X.Scale, pos.X.Offset + delta.X, pos.Y.Scale, pos.Y.Offset + delta.Y)
-		end
-	end)
-end
+function Library:CreateWindow(titleText)
+	local MainFrame = Instance.new("Frame")
+	MainFrame.Size = UDim2.new(0,590,0,386)
+	MainFrame.Position = UDim2.new(0,74,0,-64)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	MainFrame.BackgroundTransparency = 0.6
+	MainFrame.Parent = ui
+	MainFrame.Active = true
+	MainFrame.Draggable = true
 
-function library:CreateWindow(name)
-	local main = Instance.new("Frame")
-	main.Size = UDim2.new(0, 400, 0, 300)
-	main.Position = UDim2.new(0, 100, 0, 100)
-	main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	main.Parent = ui
+	local innerFrame = Instance.new("Frame")
+	innerFrame.Size = UDim2.new(1,-4,1,-4)
+	innerFrame.Position = UDim2.new(0,2,0,2)
+	innerFrame.BackgroundColor3 = Color3.fromRGB(252,255,123)
+	innerFrame.BackgroundTransparency = 0.6
+	innerFrame.Parent = MainFrame
 
-	local title = Instance.new("TextLabel")
-	title.Text = name
-	title.Size = UDim2.new(1, 0, 0, 40)
-	title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.Parent = main
+	local TabFrame = Instance.new("Frame")
+	TabFrame.Size = UDim2.new(0,158,0,320)
+	TabFrame.Position = UDim2.new(0,10,0,52)
+	TabFrame.BackgroundColor3 = Color3.fromRGB(58,58,58)
+	TabFrame.Parent = innerFrame
 
-	local scroll = Instance.new("ScrollingFrame")
-	scroll.Size = UDim2.new(1, -10, 1, -50)
-	scroll.Position = UDim2.new(0, 5, 0, 45)
-	scroll.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	scroll.ScrollBarThickness = 4
-	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scroll.Parent = main
+	local TabScroll = Instance.new("ScrollingFrame")
+	TabScroll.Size = UDim2.new(1,-12,1,-12)
+	TabScroll.Position = UDim2.new(0,6,0,6)
+	TabScroll.BackgroundTransparency = 1
+	TabScroll.ScrollBarThickness = 4
+	TabScroll.Parent = TabFrame
 
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 6)
-	layout.Parent = scroll
-	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+	local TabLayout = Instance.new("UIListLayout")
+	TabLayout.Padding = UDim.new(0,6)
+	TabLayout.Parent = TabScroll
+	TabScroll.CanvasSize = UDim2.new(0,0,0,0)
+	TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		TabScroll.CanvasSize = UDim2.new(0,0,0,TabLayout.AbsoluteContentSize.Y + 10)
 	end)
 
-	dragify(main)
+	local PageFrame = Instance.new("Frame")
+	PageFrame.Size = UDim2.new(0,392,0,320)
+	PageFrame.Position = UDim2.new(0,186,0,54)
+	PageFrame.BackgroundColor3 = Color3.fromRGB(58,58,58)
+	PageFrame.Parent = MainFrame
+
+	local PageScroll = Instance.new("ScrollingFrame")
+	PageScroll.Size = UDim2.new(1,-10,1,-10)
+	PageScroll.Position = UDim2.new(0,5,0,5)
+	PageScroll.BackgroundTransparency = 1
+	PageScroll.ScrollBarThickness = 4
+	PageScroll.Parent = PageFrame
+
+	local PageLayout = Instance.new("UIListLayout")
+	PageLayout.Padding = UDim.new(0,6)
+	PageLayout.Parent = PageScroll
+	PageLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		PageScroll.CanvasSize = UDim2.new(0,0,0,PageLayout.AbsoluteContentSize.Y + 10)
+	end)
+
+	local TitleLabel = Instance.new("TextLabel")
+	TitleLabel.Text = titleText
+	TitleLabel.Size = UDim2.new(1,0,0,40)
+	TitleLabel.Position = UDim2.new(0,12,0,6)
+	TitleLabel.BackgroundTransparency = 1
+	TitleLabel.TextColor3 = Color3.fromRGB(255,255,255)
+	TitleLabel.Font = Enum.Font.SourceSansBold
+	TitleLabel.TextScaled = true
+	TitleLabel.Parent = innerFrame
 
 	local funcs = {}
 
-	function funcs:CreateButton(text, callback)
+	function funcs:CreateTab(tabName)
+		local btn = Instance.new("TextButton")
+		btn.Text = tabName
+		btn.Size = UDim2.new(1,-10,0,30)
+		btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+		btn.TextColor3 = Color3.fromRGB(255,255,255)
+		btn.Parent = TabScroll
+		btn.MouseButton1Click:Connect(function()
+			for _,c in pairs(PageScroll:GetChildren()) do
+				if c:IsA("Frame") then
+					c.Visible = false
+				end
+			end
+			if not btn._Page then
+				local frame = Instance.new("Frame")
+				frame.Size = UDim2.new(1,0,1,0)
+				frame.BackgroundTransparency = 1
+				frame.Parent = PageScroll
+				btn._Page = frame
+			end
+			btn._Page.Visible = true
+		end)
+		return btn
+	end
+
+	function funcs:CreateButton(tab, text, callback)
+		local parent = tab._Page
+		if not parent then return end
 		local b = Instance.new("TextButton")
 		b.Text = text
-		b.Size = UDim2.new(1, -10, 0, 30)
-		b.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		b.TextColor3 = Color3.fromRGB(255, 255, 255)
-		b.Parent = scroll
+		b.Size = UDim2.new(1,-10,0,30)
+		b.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		b.TextColor3 = Color3.fromRGB(255,255,255)
+		b.Parent = parent
 		b.MouseButton1Click:Connect(function() pcall(callback) end)
 	end
 
-	function funcs:CreateToggle(text, default, callback)
+	function funcs:CreateToggle(tab, text, default, callback)
+		local parent = tab._Page
+		if not parent then return end
 		local holder = Instance.new("Frame")
-		holder.Size = UDim2.new(1, -10, 0, 30)
+		holder.Size = UDim2.new(1,-10,0,30)
 		holder.BackgroundTransparency = 1
-		holder.Parent = scroll
+		holder.Parent = parent
 
 		local lbl = Instance.new("TextLabel")
 		lbl.Text = text
-		lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+		lbl.Size = UDim2.new(0.8,0,1,0)
 		lbl.BackgroundTransparency = 1
-		lbl.Size = UDim2.new(0.8, 0, 1, 0)
+		lbl.TextColor3 = Color3.fromRGB(255,255,255)
 		lbl.Parent = holder
 
 		local toggle = Instance.new("Frame")
-		toggle.Size = UDim2.new(0, 40, 0, 20)
-		toggle.Position = UDim2.new(1, -50, 0.5, -10)
-		toggle.BackgroundColor3 = default and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(100, 100, 100)
+		toggle.Size = UDim2.new(0,40,0,20)
+		toggle.Position = UDim2.new(1,-50,0.5,-10)
+		toggle.BackgroundColor3 = default and Color3.fromRGB(0,170,0) or Color3.fromRGB(100,100,100)
 		toggle.Parent = holder
 
 		local circle = Instance.new("Frame")
-		circle.Size = UDim2.new(0, 16, 0, 16)
-		circle.Position = default and UDim2.new(0, 22, 0, 2) or UDim2.new(0, 2, 0, 2)
-		circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		circle.Size = UDim2.new(0,16,0,16)
+		circle.Position = default and UDim2.new(0,22,0,2) or UDim2.new(0,2,0,2)
+		circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
 		circle.Parent = toggle
 
 		local on = default
 		toggle.InputBegan:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 then
 				on = not on
-				toggle.BackgroundColor3 = on and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(100, 100, 100)
-				circle:TweenPosition(on and UDim2.new(0, 22, 0, 2) or UDim2.new(0, 2, 0, 2), "Out", "Sine", 0.15, true)
-				pcall(callback, on)
+				toggle.BackgroundColor3 = on and Color3.fromRGB(0,170,0) or Color3.fromRGB(100,100,100)
+				circle:TweenPosition(on and UDim2.new(0,22,0,2) or UDim2.new(0,2,0,2),"Out","Sine",0.15,true)
+				pcall(callback,on)
 			end
 		end)
 	end
 
-	function funcs:CreateTextBox(placeholder, callback)
+	function funcs:CreateTextBox(tab, placeholder, callback)
+		local parent = tab._Page
+		if not parent then return end
 		local box = Instance.new("TextBox")
 		box.PlaceholderText = placeholder
-		box.Size = UDim2.new(1, -10, 0, 30)
-		box.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-		box.TextColor3 = Color3.fromRGB(255, 255, 255)
+		box.Size = UDim2.new(1,-10,0,30)
+		box.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		box.TextColor3 = Color3.fromRGB(255,255,255)
 		box.ClearTextOnFocus = false
-		box.Parent = scroll
+		box.Parent = parent
 		box.FocusLost:Connect(function()
-			pcall(callback, box.Text)
+			pcall(callback,box.Text)
 		end)
 	end
 
-	function funcs:CreateSlider(text, min, max, default, callback)
+	function funcs:CreateSlider(tab, text, min, max, default, callback)
+		local parent = tab._Page
+		if not parent then return end
 		local holder = Instance.new("Frame")
-		holder.Size = UDim2.new(1, -10, 0, 40)
+		holder.Size = UDim2.new(1,-10,0,40)
 		holder.BackgroundTransparency = 1
-		holder.Parent = scroll
+		holder.Parent = parent
 
 		local lbl = Instance.new("TextLabel")
 		lbl.Text = text.." ["..default.."]"
-		lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
-		lbl.Size = UDim2.new(1, 0, 0, 20)
+		lbl.Size = UDim2.new(1,0,0,20)
 		lbl.BackgroundTransparency = 1
+		lbl.TextColor3 = Color3.fromRGB(255,255,255)
 		lbl.Parent = holder
 
 		local bar = Instance.new("Frame")
-		bar.Size = UDim2.new(1, -20, 0, 8)
-		bar.Position = UDim2.new(0, 10, 0, 25)
-		bar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		bar.Size = UDim2.new(1,-20,0,8)
+		bar.Position = UDim2.new(0,10,0,25)
+		bar.BackgroundColor3 = Color3.fromRGB(80,80,80)
 		bar.Parent = holder
 
 		local fill = Instance.new("Frame")
-		fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-		fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+		fill.Size = UDim2.new((default-min)/(max-min),0,1,0)
+		fill.BackgroundColor3 = Color3.fromRGB(0,170,255)
 		fill.Parent = bar
 
 		local dragging = false
@@ -154,18 +199,141 @@ function library:CreateWindow(name)
 		bar.InputEnded:Connect(function(i)
 			if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
 		end)
-		UserInputService.InputChanged:Connect(function(i)
+		bar.InputChanged:Connect(function(i)
 			if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-				local rel = math.clamp((i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
-				fill.Size = UDim2.new(rel, 0, 1, 0)
-				local val = math.floor(min + (max - min) * rel)
+				local mouse = UserInputService:GetMouseLocation()
+				local pos = math.clamp((mouse.X - bar.AbsolutePosition.X)/bar.AbsoluteSize.X,0,1)
+				fill.Size = UDim2.new(pos,0,1,0)
+				local val = math.floor(min + (max-min)*pos)
 				lbl.Text = text.." ["..val.."]"
-				pcall(callback, val)
+				pcall(callback,val)
 			end
 		end)
 	end
 
+function CreateDrop(parent, text, options, callback)
+	local holder = Instance.new("Frame")
+	holder.Size = UDim2.new(1,-10,0,30)
+	holder.BackgroundTransparency = 1
+	holder.Parent = parent
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Text = text
+	lbl.Size = UDim2.new(0.6,0,1,0)
+	lbl.BackgroundTransparency = 1
+	lbl.TextColor3 = Color3.fromRGB(255,255,255)
+	lbl.Parent = holder
+
+	local dropBtn = Instance.new("TextButton")
+	dropBtn.Text = "▼"
+	dropBtn.Size = UDim2.new(0.35,0,1,0)
+	dropBtn.Position = UDim2.new(0.65,0,0,0)
+	dropBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+	dropBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	dropBtn.Parent = holder
+
+	local list = Instance.new("Frame")
+	list.Size = UDim2.new(1,0,0,#options*30)
+	list.Position = UDim2.new(0,0,1,0)
+	list.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	list.Visible = false
+	list.Parent = holder
+
+	local layout = Instance.new("UIListLayout")
+	layout.Parent = list
+
+	for i,option in ipairs(options) do
+		local opt = Instance.new("TextButton")
+		opt.Text = option
+		opt.Size = UDim2.new(1,0,0,30)
+		opt.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		opt.TextColor3 = Color3.fromRGB(255,255,255)
+		opt.Parent = list
+		opt.MouseButton1Click:Connect(function()
+			dropBtn.Text = option
+			list.Visible = false
+			pcall(callback, option)
+		end)
+	end
+
+	dropBtn.MouseButton1Click:Connect(function()
+		list.Visible = not list.Visible
+	end)
+end
+function CreateMultiSelectDrop(parent, title, options, callback)
+	local holder = Instance.new("Frame")
+	holder.Size = UDim2.new(1,-10,0,30)
+	holder.BackgroundTransparency = 1
+	holder.Parent = parent
+
+	local lbl = Instance.new("TextLabel")
+	lbl.Text = title
+	lbl.Size = UDim2.new(0.6,0,1,0)
+	lbl.BackgroundTransparency = 1
+	lbl.TextColor3 = Color3.fromRGB(255,255,255)
+	lbl.Parent = holder
+
+	local dropBtn = Instance.new("TextButton")
+	dropBtn.Text = "▼"
+	dropBtn.Size = UDim2.new(0.35,0,1,0)
+	dropBtn.Position = UDim2.new(0.65,0,0,0)
+	dropBtn.BackgroundColor3 = Color3.fromRGB(80,80,80)
+	dropBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	dropBtn.Parent = holder
+
+	local listFrame = Instance.new("Frame")
+	listFrame.Size = UDim2.new(1,0,0,150)
+	listFrame.Position = UDim2.new(0,0,1,0)
+	listFrame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	listFrame.Visible = false
+	listFrame.ClipsDescendants = true
+	listFrame.Parent = holder
+
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Size = UDim2.new(1,0,1,0)
+	scroll.CanvasSize = UDim2.new(0,0,0,#options*30)
+	scroll.BackgroundTransparency = 1
+	scroll.ScrollBarThickness = 4
+	scroll.Parent = listFrame
+
+	local layout = Instance.new("UIListLayout")
+	layout.Parent = scroll
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local selected = {}
+
+	for i,option in ipairs(options) do
+		local opt = Instance.new("TextButton")
+		opt.Text = option
+		opt.Size = UDim2.new(1,0,0,30)
+		opt.BackgroundColor3 = Color3.fromRGB(80,80,80)
+		opt.TextColor3 = Color3.fromRGB(255,255,255)
+		opt.Parent = scroll
+
+		opt.MouseButton1Click:Connect(function()
+			if table.find(selected, option) then
+				for idx,val in ipairs(selected) do
+					if val == option then
+						table.remove(selected, idx)
+						break
+					end
+				end
+				opt.BackgroundColor3 = Color3.fromRGB(80,80,80)
+			else
+				table.insert(selected, option)
+				opt.BackgroundColor3 = Color3.fromRGB(100,150,255)
+			end
+			dropBtn.Text = #selected > 0 and table.concat(selected,", ") or "▼"
+			pcall(callback, selected)
+		end)
+	end
+
+	dropBtn.MouseButton1Click:Connect(function()
+		listFrame.Visible = not listFrame.Visible
+	end)
+end
+
 	return funcs
 end
 
-return library
+return Library
