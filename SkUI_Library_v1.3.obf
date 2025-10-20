@@ -1,169 +1,171 @@
-local Library = {}
-local windowCount = 0
-local UIS = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 
-local function makeDraggable(frame, dragBar)
-	local dragging, dragStart, startPos
-	dragBar.InputBegan:Connect(function(input)
+local library = {}
+local ui = Instance.new("ScreenGui")
+ui.Name = "CoreUiLib"
+ui.ResetOnSpawn = false
+ui.Parent = CoreGui
+
+local function dragify(frame)
+	local dragging = false
+	local dragInput, start, pos
+	frame.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
-			dragStart = input.Position
-			startPos = frame.Position
+			start = input.Position
+			pos = frame.Position
 			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
 			end)
 		end
 	end)
-	UIS.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			local delta = input.Position - dragStart
-			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	frame.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+	end)
+	UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - start
+			frame.Position = UDim2.new(pos.X.Scale, pos.X.Offset + delta.X, pos.Y.Scale, pos.Y.Offset + delta.Y)
 		end
 	end)
 end
 
-function Library:Window(name, titleText)
-	windowCount += 1
-	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = name or ("Window_" .. windowCount)
-	ScreenGui.Parent = CoreGui
-	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+function library:CreateWindow(name)
+	local main = Instance.new("Frame")
+	main.Size = UDim2.new(0, 400, 0, 300)
+	main.Position = UDim2.new(0, 100, 0, 100)
+	main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	main.Parent = ui
 
-	local Frame = Instance.new("Frame")
-	Frame.Size = UDim2.new(0, 236, 0, 174)
-	Frame.Position = UDim2.new(0, 10 + ((windowCount - 1) * 246), 0, 6)
-	Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	Frame.BorderSizePixel = 0
-	Frame.Parent = ScreenGui
+	local title = Instance.new("TextLabel")
+	title.Text = name
+	title.Size = UDim2.new(1, 0, 0, 40)
+	title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.Parent = main
 
-	local corner = Instance.new("UICorner", Frame)
-	corner.CornerRadius = UDim.new(0, 10)
+	local scroll = Instance.new("ScrollingFrame")
+	scroll.Size = UDim2.new(1, -10, 1, -50)
+	scroll.Position = UDim2.new(0, 5, 0, 45)
+	scroll.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	scroll.ScrollBarThickness = 4
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.Parent = main
 
-	local InnerFrame = Instance.new("Frame")
-	InnerFrame.Size = UDim2.new(0, 228, 0, 166)
-	InnerFrame.Position = UDim2.new(0, 4, 0, 4)
-	InnerFrame.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
-	InnerFrame.BorderSizePixel = 0
-	InnerFrame.Parent = Frame
+	local layout = Instance.new("UIListLayout")
+	layout.Padding = UDim.new(0, 6)
+	layout.Parent = scroll
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+	end)
 
-	local innerCorner = Instance.new("UICorner", InnerFrame)
-	innerCorner.CornerRadius = UDim.new(0, 10)
+	dragify(main)
 
-	local Title = Instance.new("TextLabel")
-	Title.Size = UDim2.new(0, 218, 0, 38)
-	Title.Position = UDim2.new(0, 6, 0, 4)
-	Title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Title.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json")
-	Title.TextScaled = true
-	Title.TextWrapped = true
-	Title.Text = titleText or "Window"
-	Title.Parent = InnerFrame
-	local titleCorner = Instance.new("UICorner", Title)
-	titleCorner.CornerRadius = UDim.new(0, 10)
+	local funcs = {}
 
-	local Scroll = Instance.new("ScrollingFrame")
-	Scroll.Size = UDim2.new(0, 220, 0, 112)
-	Scroll.Position = UDim2.new(0, 4, 0, 46)
-	Scroll.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	Scroll.BorderSizePixel = 0
-	Scroll.ScrollBarThickness = 5
-	Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-	Scroll.Parent = InnerFrame
-	local scrollCorner = Instance.new("UICorner", Scroll)
-	scrollCorner.CornerRadius = UDim.new(0, 10)
-
-	local UIListLayout = Instance.new("UIListLayout", Scroll)
-	UIListLayout.Padding = UDim.new(0, 5)
-
-	makeDraggable(Frame, Title)
-
-	local tab = {}
-
-	function tab:CreateButton(text, callback)
-		local Button = Instance.new("TextButton")
-		Button.Size = UDim2.new(0, 212, 0, 34)
-		Button.BackgroundColor3 = Color3.fromRGB(171, 171, 171)
-		Button.FontFace = Font.new("rbxasset://fonts/families/PressStart2P.json")
-		Button.TextScaled = true
-		Button.TextWrapped = true
-		Button.Text = text
-		Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Button.Parent = Scroll
-		Button.MouseButton1Click:Connect(function()
-			if callback then
-				callback()
-			end
-		end)
-		local corner = Instance.new("UICorner", Button)
-		corner.CornerRadius = UDim.new(0, 6)
+	function funcs:CreateButton(text, callback)
+		local b = Instance.new("TextButton")
+		b.Text = text
+		b.Size = UDim2.new(1, -10, 0, 30)
+		b.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		b.TextColor3 = Color3.fromRGB(255, 255, 255)
+		b.Parent = scroll
+		b.MouseButton1Click:Connect(function() pcall(callback) end)
 	end
 
-	function tab:CreateToggle(text, callback)
-		local ToggleFrame = Instance.new("Frame")
-		ToggleFrame.Size = UDim2.new(0, 212, 0, 34)
-		ToggleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-		ToggleFrame.Parent = Scroll
-		local corner = Instance.new("UICorner", ToggleFrame)
-		corner.CornerRadius = UDim.new(0, 6)
+	function funcs:CreateToggle(text, default, callback)
+		local holder = Instance.new("Frame")
+		holder.Size = UDim2.new(1, -10, 0, 30)
+		holder.BackgroundTransparency = 1
+		holder.Parent = scroll
 
-		local Label = Instance.new("TextLabel")
-		Label.Size = UDim2.new(1, -50, 1, 0)
-		Label.Position = UDim2.new(0, 10, 0, 0)
-		Label.BackgroundTransparency = 1
-		Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-		Label.TextXAlignment = Enum.TextXAlignment.Left
-		Label.Font = Enum.Font.SourceSansBold
-		Label.TextScaled = true
-		Label.Text = text
-		Label.Parent = ToggleFrame
+		local lbl = Instance.new("TextLabel")
+		lbl.Text = text
+		lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+		lbl.BackgroundTransparency = 1
+		lbl.Size = UDim2.new(0.8, 0, 1, 0)
+		lbl.Parent = holder
 
-		local Switch = Instance.new("Frame")
-		Switch.Size = UDim2.new(0, 40, 0, 20)
-		Switch.Position = UDim2.new(1, -45, 0.5, -10)
-		Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-		Switch.Parent = ToggleFrame
-		local switchCorner = Instance.new("UICorner", Switch)
-		switchCorner.CornerRadius = UDim.new(1, 0)
+		local toggle = Instance.new("Frame")
+		toggle.Size = UDim2.new(0, 40, 0, 20)
+		toggle.Position = UDim2.new(1, -50, 0.5, -10)
+		toggle.BackgroundColor3 = default and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(100, 100, 100)
+		toggle.Parent = holder
 
-		local Knob = Instance.new("Frame")
-		Knob.Size = UDim2.new(0, 16, 0, 16)
-		Knob.Position = UDim2.new(0, 2, 0.5, -8)
-		Knob.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-		Knob.Parent = Switch
-		local knobCorner = Instance.new("UICorner", Knob)
-		knobCorner.CornerRadius = UDim.new(1, 0)
+		local circle = Instance.new("Frame")
+		circle.Size = UDim2.new(0, 16, 0, 16)
+		circle.Position = default and UDim2.new(0, 22, 0, 2) or UDim2.new(0, 2, 0, 2)
+		circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+		circle.Parent = toggle
 
-		local toggled = false
-		local function toggle()
-			toggled = not toggled
-			local goal = {}
-			if toggled then
-				goal.Position = UDim2.new(1, -18, 0.5, -8)
-				Switch.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-			else
-				goal.Position = UDim2.new(0, 2, 0.5, -8)
-				Switch.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-			end
-			TweenService:Create(Knob, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal):Play()
-			if callback then
-				callback(toggled)
-			end
-		end
-
-		Switch.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				toggle()
+		local on = default
+		toggle.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then
+				on = not on
+				toggle.BackgroundColor3 = on and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(100, 100, 100)
+				circle:TweenPosition(on and UDim2.new(0, 22, 0, 2) or UDim2.new(0, 2, 0, 2), "Out", "Sine", 0.15, true)
+				pcall(callback, on)
 			end
 		end)
 	end
 
-	return tab
+	function funcs:CreateTextBox(placeholder, callback)
+		local box = Instance.new("TextBox")
+		box.PlaceholderText = placeholder
+		box.Size = UDim2.new(1, -10, 0, 30)
+		box.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		box.TextColor3 = Color3.fromRGB(255, 255, 255)
+		box.ClearTextOnFocus = false
+		box.Parent = scroll
+		box.FocusLost:Connect(function()
+			pcall(callback, box.Text)
+		end)
+	end
+
+	function funcs:CreateSlider(text, min, max, default, callback)
+		local holder = Instance.new("Frame")
+		holder.Size = UDim2.new(1, -10, 0, 40)
+		holder.BackgroundTransparency = 1
+		holder.Parent = scroll
+
+		local lbl = Instance.new("TextLabel")
+		lbl.Text = text.." ["..default.."]"
+		lbl.TextColor3 = Color3.fromRGB(255, 255, 255)
+		lbl.Size = UDim2.new(1, 0, 0, 20)
+		lbl.BackgroundTransparency = 1
+		lbl.Parent = holder
+
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(1, -20, 0, 8)
+		bar.Position = UDim2.new(0, 10, 0, 25)
+		bar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+		bar.Parent = holder
+
+		local fill = Instance.new("Frame")
+		fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+		fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+		fill.Parent = bar
+
+		local dragging = false
+		bar.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end
+		end)
+		bar.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+		end)
+		UserInputService.InputChanged:Connect(function(i)
+			if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+				local rel = math.clamp((i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+				fill.Size = UDim2.new(rel, 0, 1, 0)
+				local val = math.floor(min + (max - min) * rel)
+				lbl.Text = text.." ["..val.."]"
+				pcall(callback, val)
+			end
+		end)
+	end
+
+	return funcs
 end
 
-return Library
+return library
